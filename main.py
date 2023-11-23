@@ -3,6 +3,11 @@ import sys
 import numpy as np
 import random
 
+import numpy as np
+from perlin_numpy import (
+    generate_perlin_noise_2d, generate_fractal_noise_2d
+)
+
 # Initialize Pygame
 pygame.init()
 
@@ -11,7 +16,7 @@ WIDTH, HEIGHT = 900, 900
 FPS = 60
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-CELL_SIZE = np.array([50, 50])
+CELL_SIZE = np.array([10, 10])
 
 win = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption('xd pls why')
@@ -63,8 +68,9 @@ class Grid:
         #     pygame.draw.circle(self.win, "white", swap_2D_vec(point.pos), point.size)
 
 
-    def change_cells(self, acc_function, cell_size, grid_res):
-        self.cells = [[Cell(acc_function(x, y), cell_size) for x in range(grid_res.flat[0])] for y in range(grid_res.flat[1])]
+    def change_cells(self, force_matrix_function, cell_size, grid_res):
+        matrix = force_matrix_function(grid_res)
+        self.cells = [[Cell(matrix[y][x], cell_size) for x in range(grid_res.flat[0])] for y in range(grid_res.flat[1])]
 
     def update(self):
         for point in self.points:
@@ -101,35 +107,49 @@ class Grid:
 
             pygame.draw.line(self.win, "white", swap_2D_vec(pos0), swap_2D_vec(point.pos), 1)
 
+point_weight = 20
+perlin_contrast = 10
+friction = 0.05
 
-def acc_function(x, y):
-    return np.array([
-        random.uniform(-1, 1),
-        random.uniform(-1, 1),
-    ])
+
+def generate_2D_force_vector_matrix(size):
+    np.random.seed(random.randint(1, 100) * random.randint(1, 100))
+    noise = generate_perlin_noise_2d((size.flat[0], size.flat[1]), (1, 1))
+    angles = ((noise + 1) / 2) * 2 * np.pi
+    angles *= perlin_contrast
+
+    X_parts = np.cos(angles)
+    Y_parts = np.sin(angles)
+    force_vector_matrix = [[0 for _ in range(size.flat[1])] for _ in range(size.flat[0])]
+    for y in range(size.flat[1]):
+        for x in range(size.flat[0]):
+            force_vector_matrix[y][x] = np.array([X_parts[y][x], Y_parts[y][x]])
+
+    return force_vector_matrix
+
 
 def generate_points(n):
     points = []
-    # for i in range(n):
-    #     points.append(Point(np.array([random.randint(0, WIDTH), random.randint(0, HEIGHT)]), np.array([0, 0]), 5, 10))
-
-    # return points
-    cell_size = grid.cells[0][0].size_vec.tolist()
-
-    for y in range(len(grid.cells)):
-        for x in range(len(grid.cells[y])):
-            vec_origin = np.array([(x + 0.5) * cell_size[0], (y + 0.5) * cell_size[1]])
-            points.append(Point(vec_origin, np.array([0, 0]), 5, 10))
+    for i in range(n):
+        points.append(Point(np.array([random.randint(0, WIDTH), random.randint(0, HEIGHT)]), np.array([0, 0]), 5, 10))
 
     return points
+    # cell_size = grid.cells[0][0].size_vec.tolist()
+
+    # for y in range(len(grid.cells)):
+    #     for x in range(len(grid.cells[y])):
+    #         vec_origin = np.array([(x + 0.5) * cell_size[0], (y + 0.5) * cell_size[1]])
+    #         points.append(Point(vec_origin, np.array([0, 0]), 5, point_weight))
+
+    # return points
 
 
 grid_res = np.ceil(np.array([WIDTH, HEIGHT]) / CELL_SIZE).astype("int32")
-grid = Grid(None, win, 0.1)
-grid.change_cells(acc_function, CELL_SIZE, grid_res)
+grid = Grid(None, win, friction)
+grid.change_cells(generate_2D_force_vector_matrix, CELL_SIZE, grid_res)
 
 # grid.points.append(Point(np.array([300, 300]), np.array([0, 0]), 1, 1))
-grid.points = generate_points(2000)
+grid.points = generate_points(1000)
 
 running = True
 while running:
@@ -151,7 +171,7 @@ while running:
 
     # grid.draw()
     grid.update_and_draw()
-    grid.draw_vector_field()
+    #grid.draw_vector_field()
 
     pygame.display.flip()
     clock.tick(FPS)
