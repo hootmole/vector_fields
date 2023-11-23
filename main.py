@@ -16,7 +16,7 @@ WIDTH, HEIGHT = 900, 900
 FPS = 60
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-CELL_SIZE = np.array([10, 10])
+
 
 win = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption('xd pls why')
@@ -85,8 +85,8 @@ class Grid:
 
             force = cell.force_vec.astype("float64")
             acceleration = force / point.mass
-            point.velocity += acceleration - (point.velocity * self.friction)
-            point.pos += point.velocity
+            point.velocity += acceleration - (point.velocity * self.friction) * time_scale
+            point.pos += point.velocity * time_scale
 
     def update_and_draw(self):
         for point in self.points:
@@ -102,18 +102,20 @@ class Grid:
 
             force = cell.force_vec.astype("float64")
             acceleration = force / point.mass
-            point.velocity += acceleration - (point.velocity * self.friction)
-            point.pos += point.velocity
+            point.velocity += (acceleration - (point.velocity * self.friction)) * time_scale
+            point.pos += point.velocity * time_scale
 
             pygame.draw.line(self.win, "white", swap_2D_vec(pos0), swap_2D_vec(point.pos), 1)
 
 point_weight = 20
-perlin_contrast = 10
-friction = 0.05
-
+perlin_contrast = 2
+friction = 0.09
+time_scale = 1
+CELL_SIZE = np.array([10, 10])
 
 def generate_2D_force_vector_matrix(size):
     np.random.seed(random.randint(1, 100) * random.randint(1, 100))
+
     noise = generate_perlin_noise_2d((size.flat[0], size.flat[1]), (1, 1))
     angles = ((noise + 1) / 2) * 2 * np.pi
     angles *= perlin_contrast
@@ -131,7 +133,7 @@ def generate_2D_force_vector_matrix(size):
 def generate_points(n):
     points = []
     for i in range(n):
-        points.append(Point(np.array([random.randint(0, WIDTH), random.randint(0, HEIGHT)]), np.array([0, 0]), 5, 10))
+        points.append(Point(np.array([random.randint(0, WIDTH), random.randint(0, HEIGHT)]), np.array([0, 0]), 5, point_weight))
 
     return points
     # cell_size = grid.cells[0][0].size_vec.tolist()
