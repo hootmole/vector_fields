@@ -14,8 +14,6 @@ pygame.init()
 # Constants
 WIDTH, HEIGHT = 900, 900
 FPS = 60
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
 
 
 win = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
@@ -107,11 +105,11 @@ class Grid:
 
             pygame.draw.line(self.win, "white", swap_2D_vec(pos0), swap_2D_vec(point.pos), 1)
 
-point_weight = 20
-perlin_contrast = 2
-friction = 0.09
+point_weight = 200
+perlin_contrast = 100
+friction = 0.001
 time_scale = 1
-CELL_SIZE = np.array([10, 10])
+CELL_SIZE = np.array([1, 1])
 
 def generate_2D_force_vector_matrix(size):
     np.random.seed(random.randint(1, 100) * random.randint(1, 100))
